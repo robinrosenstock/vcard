@@ -15,7 +15,7 @@ pip install -r requirements.txt
 
 ```bash
 # stdout will contain the matching vCards unless `--out` is provided.
-python vcard.py CategoryA CategoryB file1.vcf [file2.vcf ...] [--out out.vcf]
+python vcard.py categorydiff CategoryA CategoryB file1.vcf [file2.vcf ...] [--out out.vcf]
 ```
 
 # Run tests
