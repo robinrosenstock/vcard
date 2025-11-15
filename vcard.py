@@ -200,20 +200,6 @@ def find_matching_vcards(cat_a, cat_b, files):
 
     return matches, total_vcards, matched_count
 
-# New: write matches to stdout or file
-def write_matches(matches, out_path):
-    """Output matching vCards to stdout or file.
-
-    Args:
-        matches (list[str]): Matching vCard strings.
-        out_path (str|None): If provided, path to write output file.
-    """
-    out_text = "\n".join(matches) + ("\n" if matches else "")
-    if out_path:
-        Path(out_path).write_text(out_text, encoding='utf-8')
-    else:
-        sys.stdout.write(out_text)
-
 def print_usage():
     print("Usage:")
     print("  python vcard.py categorydiff CategoryA CategoryB file1.vcf [file2.vcf ...] [--out out.vcf]")
@@ -251,20 +237,22 @@ def main():
         input_files = args[2:]
         result_cards = categorydiff(category_a, category_b, input_files)
         output = ("\n".join(result_cards) + ("\n" if result_cards else ""))
+        
+        # matches, total_vcards, matched_count = find_matching_vcards(category_a, category_b, input_files)
+
+        # # Summary printed to stderr so stdout remains the vcard stream
+        # print(f"Processed vcards: {total_vcards}", file=sys.stderr)
+        # print(f"vcards with '{category_a}': {matched_count}", file=sys.stderr)
+        # print(f"Matches (has '{category_a}', lacks '{category_b}'): {matched_count}", file=sys.stderr)
+
         if out_path:
             with open(out_path, "w", encoding="utf-8") as fh:
                 fh.write(output)
         else:
             sys.stdout.write(output)
     else:
-        cat_a, cat_b, files, out_path = parse_args(sys.argv[1:])
-        matches, total_vcards, matched_count = find_matching_vcards(cat_a, cat_b, files)
-        write_matches(matches, out_path)
-
-        # Summary printed to stderr so stdout remains the vcard stream
-        print(f"Processed vcards: {total_vcards}", file=sys.stderr)
-        print(f"vcards with '{cat_a}': {matched_count}", file=sys.stderr)
-        print(f"Matches (has '{cat_a}', lacks '{cat_b}'): {matched_count}", file=sys.stderr)
+        print_usage()
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
