@@ -42,7 +42,7 @@ import pytest
 
 # Load the module from the exact file path so tests exercise the provided file.
 def load_module():
-    fp = Path("/home/robin/Downloads/vcard/vcard.py")
+    fp = Path("./vcard.py")
     spec = importlib.util.spec_from_file_location("vcard", str(fp))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
