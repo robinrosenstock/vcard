@@ -6,22 +6,7 @@ from pathlib import Path
 
 """vcard.py
 
-Utilities to scan vCard (.vcf) files and extract cards that belong to one
-category but not another.
-
-Usage:
-    vcard.py CategoryA CategoryB file1.vcf [file2.vcf ...] [--out out.vcf]
-
-Behavior:
-- Reads one or more vCard files, preserves vCard folding rules when parsing.
-- Selects vCards that list CategoryA in their CATEGORIES: property but do not
-  list CategoryB.
-- Writes matching vCards to stdout by default or to --out <file> if provided.
-- Prints a short summary to stderr so stdout remains a pure vCard stream.
-
-Notes:
-- Category matching is case-insensitive.
-- Folded lines (a newline followed by space or tab) are unfolded before parsing.
+Utilities for vCard (.vcf) processing.
 """
 
 CATEGORY_COUNTS = {}  # module-level store for last computed category counts
