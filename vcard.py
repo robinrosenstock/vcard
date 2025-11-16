@@ -151,23 +151,63 @@ def get_categories(card: str) -> List[str]:
             return items
     return []
 
+def get_name(card: str) -> str:
+    """Extract a display name from a vCard block.
+
+    Preference order:
+      1. FN: property (full name)
+      2. N: property (family;given;additional;prefix;suffix) -> "Given Family"
+
+    Returns an empty string if no name property is present.
+    """
+    # Prefer FN
+    for line in card.splitlines():
+        m = re.match(r'(?i)^FN:\s*(.+)$', line)
+        if m:
+            return m.group(1).strip()
+
+    # Fallback to N - format as "Given Family"
+    for line in card.splitlines():
+        m = re.match(r'(?i)^N:\s*(.+)$', line)
+        if m:
+            parts = [p.strip() for p in m.group(1).split(';')]
+            family = parts[0] if len(parts) > 0 else ""
+            given = parts[1] if len(parts) > 1 else ""
+            name = " ".join(p for p in (given, family) if p)
+            return name
+
+    return ""
+
 def categorydiff(cat_a: str, cat_b: str, files: List[str]) -> List[str]:
     """Return vCard blocks that have cat_a but not cat_b and record category counts."""
     cards = read_vcards(files)
     out = []
-    counts = {}
-    la = cat_a.lower()
-    lb = cat_b.lower()
+    counts_total = {}
+    cat_a = cat_a.lower()
+    count_of_cat_a = 0
+    cat_b = cat_b.lower()
+    count_of_cat_b = 0
     for card in cards:
+        name = get_name(card)
+        # print(name)
         cats = [c.lower() for c in get_categories(card)]
-        # tally categories seen in this card stream
+        # cats is the list categories this vcard has
         for c in cats:
-            counts[c] = counts.get(c, 0) + 1
-        if la in cats and lb not in cats:
+            # for all categories in this card, count occurrences
+            counts_total[c] = counts_total.get(c, 0) + 1
+            if cat_a == c:
+                print(name)
+                count_of_cat_a = count_of_cat_a + 1
+            if cat_b == c:
+                count_of_cat_b = count_of_cat_b + 1
+        if cat_a in cats and cat_b not in cats:
             out.append(card)
     # store counts for later inspection/printing
     global CATEGORY_COUNTS
-    CATEGORY_COUNTS = counts
+    # print(counts_total)
+    print(count_of_cat_a)
+    print(count_of_cat_b)
+    CATEGORY_COUNTS = counts_total
     return out
 
 # New: parse CLI args and return structured values
@@ -280,12 +320,6 @@ def main(argv=None):
             Path(args.out).write_text(output, encoding="utf-8")
         else:
             sys.stdout.write(output)
-
-        # Print category counts to stderr (keeps stdout as vCard stream)
-        if CATEGORY_COUNTS:
-            print("Category counts:", file=sys.stderr)
-            for k in sorted(CATEGORY_COUNTS):
-                print(f"  {k}: {CATEGORY_COUNTS[k]}", file=sys.stderr)
 
     elif args.command == "categorycounts":
         # If files provided, compute counts

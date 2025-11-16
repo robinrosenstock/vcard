@@ -1,6 +1,6 @@
 # Ignore all files ending with .vcf
 *.vcf
-
+output/
 
 # Byte-compiled / optimized / DLL files
 *.pyc
