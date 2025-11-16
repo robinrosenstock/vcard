@@ -44,7 +44,8 @@ def compute_category_counts(files: List[str]):
         if not p.exists():
             logging.warning("%s not found, skipping", p)
             continue
-        text = p.read_text(encoding='utf-8', errors='replace')
+        # read using robust utf-8 conversion helper
+        text = read_file_as_utf8(p)
         for vcard in iter_vcards(text):
             cats = [c.lower() for c in get_categories(vcard)]
             for c in cats:
@@ -121,24 +122,36 @@ def categories_from_vcard(card_text):
             break
     return set(cats)
 
+def read_file_as_utf8(path: Path) -> str:
+    """Read bytes from path and return a str decoded to UTF-8 (best-effort).
+
+    Tries a list of common encodings and falls back to latin-1 to ensure a
+    Unicode string is always returned. Normalizes newlines to '\n'.
+    """
+    encodings = ("utf-8", "utf-8-sig", "utf-16", "latin-1", "cp1252")
+    b = path.read_bytes()
+    for enc in encodings:
+        try:
+            text = b.decode(enc)
+            # normalize newlines
+            return text.replace('\r\n', '\n').replace('\r', '\n')
+        except (UnicodeDecodeError, LookupError):
+            continue
+    # last resort: decode with errors replaced
+    return b.decode("utf-8", errors="replace").replace('\r\n', '\n').replace('\r', '\n')
+
 def read_vcards(files: List[str]) -> List[str]:
     """Read vCard blocks from files (BEGIN:VCARD ... END:VCARD)."""
     cards = []
-    buf = []
     for path in files:
-        with open(path, "r", encoding="utf-8") as fh:
-            for raw in fh:
-                line = raw.rstrip("\n")
-                if line.upper().startswith("BEGIN:VCARD"):
-                    buf = [line]
-                elif line.upper().startswith("END:VCARD"):
-                    buf.append(line)
-                    cards.append("\n".join(buf))
-                    buf = []
-                else:
-                    if buf:
-                        buf.append(line)
-    # In case a file ends without END:VCARD, ignore incomplete block.
+        p = Path(path)
+        if not p.exists():
+            logging.warning("%s not found, skipping", p)
+            continue
+        # Use the utf8-normalized text reader and iterate vCards
+        text = read_file_as_utf8(p)
+        for vcard in iter_vcards(text):
+            cards.append(vcard)
     return cards
 
 def get_categories(card: str) -> List[str]:
@@ -150,6 +163,25 @@ def get_categories(card: str) -> List[str]:
             items = [p.strip() for p in re.split(r'[;,]', parts) if p.strip()]
             return items
     return []
+
+def categorycontacts(category: str, files: List[str]) -> List[str]:
+    """Return vCard blocks that have the specified category (case-insensitive).
+
+    Args:
+        category: category name to match
+        files: list of .vcf file paths to scan
+
+    Returns:
+        list of matching vCard blocks as strings
+    """
+    la = category.lower()
+    results = []
+    # reuse read_vcards which collects vcard blocks per file
+    for card in read_vcards(files):
+        cats = [c.lower() for c in get_categories(card)]
+        if la in cats:
+            results.append(card)
+    return results
 
 def get_name(card: str) -> str:
     """Extract a display name from a vCard block.
@@ -266,7 +298,8 @@ def find_matching_vcards(cat_a, cat_b, files):
         if not p.exists():
             logging.warning("%s not found, skipping", p)
             continue
-        text = p.read_text(encoding='utf-8', errors='replace')
+        # read using robust utf-8 conversion helper
+        text = read_file_as_utf8(p)
         for vcard in iter_vcards(text):
             total_vcards += 1
             cats = categories_from_vcard(vcard)
@@ -293,6 +326,12 @@ def build_parser():
     p_diff.add_argument("files", nargs="+", help="One or more .vcf files")
     p_diff.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
 
+    # categorycontacts subcommand
+    p_contacts = subparsers.add_parser("categorycontacts", help="Output vCards that have the specified category")
+    p_contacts.add_argument("category", help="Category name to filter by")
+    p_contacts.add_argument("files", nargs="+", help="One or more .vcf files")
+    p_contacts.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
+
     # categorycounts subcommand
     p_counts = subparsers.add_parser("categorycounts", help="Compute/print category occurrence counts")
     p_counts.add_argument("files", nargs="*", help="Optional .vcf files to compute counts from")
@@ -316,6 +355,15 @@ def main(argv=None):
         input_files = args.files
         result_cards = categorydiff(category_a, category_b, input_files)
         output = ("\n".join(result_cards) + ("\n" if result_cards else ""))
+        if args.out:
+            Path(args.out).write_text(output, encoding="utf-8")
+        else:
+            sys.stdout.write(output)
+
+    elif args.command == "categorycontacts":
+        # produce vCards that include the requested category
+        matches = categorycontacts(args.category, args.files)
+        output = ("\n".join(matches) + ("\n" if matches else ""))
         if args.out:
             Path(args.out).write_text(output, encoding="utf-8")
         else:
