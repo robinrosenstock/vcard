@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import sys
 import re
+import argparse
+import logging
 from typing import List
 from pathlib import Path
 
@@ -9,6 +11,7 @@ from pathlib import Path
 Utilities for vCard (.vcf) processing.
 """
 
+__version__ = "0.1.0"
 CATEGORY_COUNTS = {}  # module-level store for last computed category counts
 
 def categorycounts(output=None):
@@ -39,7 +42,7 @@ def compute_category_counts(files: List[str]):
     for p in files:
         p = Path(p)
         if not p.exists():
-            print(f"Warning: {p} not found, skipping", file=sys.stderr)
+            logging.warning("%s not found, skipping", p)
             continue
         text = p.read_text(encoding='utf-8', errors='replace')
         for vcard in iter_vcards(text):
@@ -221,7 +224,7 @@ def find_matching_vcards(cat_a, cat_b, files):
     for p in files:
         p = Path(p)
         if not p.exists():
-            print(f"Warning: {p} not found, skipping", file=sys.stderr)
+            logging.warning("%s not found, skipping", p)
             continue
         text = p.read_text(encoding='utf-8', errors='replace')
         for vcard in iter_vcards(text):
@@ -237,42 +240,39 @@ def print_usage():
     print("Usage:")
     print("  python vcard.py categorydiff CategoryA CategoryB file1.vcf [file2.vcf ...] [--out out.vcf]")
 
-def main():
-    """Main entrypoint that coordinates argument parsing, matching and output.
+def main(argv=None):
+    """Main entrypoint using argparse with two subcommands: categorydiff and categorycounts."""
+    if argv is None:
+        argv = sys.argv[1:]
 
-    The function delegates all work to smaller functions so it only orchestrates
-    the high-level flow.
-    """
-    if len(sys.argv) < 2:
-        print_usage()
-        sys.exit(1)
+    logging.basicConfig(format="%(levelname)s: %(message)s")
 
-    func = sys.argv[1].lower()
-    args = sys.argv[2:]
+    parser = argparse.ArgumentParser(prog="vcard.py", description="vCard utilities")
+    parser.add_argument("--version", action="version", version=__version__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Optional --out output file (can appear anywhere in args)
-    out_path = None
-    if "--out" in args:
-        i = args.index("--out")
-        if i + 1 >= len(args):
-            print("Error: --out requires a filename")
-            sys.exit(2)
-        out_path = args[i + 1]
-        # remove the option and its value
-        del args[i:i+2]
+    # categorydiff subcommand
+    p_diff = subparsers.add_parser("categorydiff", help="Output vCards that have CategoryA but not CategoryB")
+    p_diff.add_argument("category_a")
+    p_diff.add_argument("category_b")
+    p_diff.add_argument("files", nargs="+", help="One or more .vcf files")
+    p_diff.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
 
-    if func == "categorydiff":
-        if len(args) < 3:
-            print_usage()
-            sys.exit(1)
-        category_a = args[0]
-        category_b = args[1]
-        input_files = args[2:]
+    # categorycounts subcommand
+    p_counts = subparsers.add_parser("categorycounts", help="Compute/print category occurrence counts")
+    p_counts.add_argument("files", nargs="*", help="Optional .vcf files to compute counts from")
+    p_counts.add_argument("--out", "-o", dest="out", help="Write counts to file (default stdout)")
+
+    args = parser.parse_args(argv)
+
+    if args.command == "categorydiff":
+        category_a = args.category_a
+        category_b = args.category_b
+        input_files = args.files
         result_cards = categorydiff(category_a, category_b, input_files)
         output = ("\n".join(result_cards) + ("\n" if result_cards else ""))
-        if out_path:
-            with open(out_path, "w", encoding="utf-8") as fh:
-                fh.write(output)
+        if args.out:
+            Path(args.out).write_text(output, encoding="utf-8")
         else:
             sys.stdout.write(output)
 
@@ -282,28 +282,22 @@ def main():
             for k in sorted(CATEGORY_COUNTS):
                 print(f"  {k}: {CATEGORY_COUNTS[k]}", file=sys.stderr)
 
-    elif func == "categorycounts":
-        # If files are provided as arguments, compute counts from them.
-        # args here are remaining argv after removing --out.
-        if args:
-            compute_category_counts(args)
+    elif args.command == "categorycounts":
+        # If files provided, compute counts
+        if args.files:
+            compute_category_counts(args.files)
 
-        # If still no counts, provide a helpful hint on how to use the command.
+        # If still no counts, print help hint to stderr
         if not CATEGORY_COUNTS:
-            print("No category counts available. Provide one or more vCard files to compute counts, e.g.:",
-                  file=sys.stderr)
-            print("  python vcard.py categorycounts cards.vcf [more.vcf ...] [--out out.txt]", file=sys.stderr)
+            logging.info("No category counts available. Provide vCard files to compute counts.")
+            parser.exit(0)
 
-        # Output the counts either to the requested file or to stdout.
-        if out_path:
-            with open(out_path, "w", encoding="utf-8") as fh:
+        # Output counts
+        if args.out:
+            with open(args.out, "w", encoding="utf-8") as fh:
                 categorycounts(output=fh)
         else:
             categorycounts(output=sys.stdout)
-
-    else:
-        print_usage()
-        sys.exit(1)
 
 if __name__ == "__main__":
     main()
