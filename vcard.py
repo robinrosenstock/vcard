@@ -26,6 +26,45 @@ Notes:
 
 CATEGORY_COUNTS = {}  # module-level store for last computed category counts
 
+def categorycounts(output=None):
+    """Output the stored category counts and return them.
+
+    Args:
+        output: a file-like object to write the human-readable counts to.
+                If None, defaults to sys.stderr.
+
+    Returns:
+        dict: A shallow copy of the CATEGORY_COUNTS dictionary.
+    """
+    if output is None:
+        output = sys.stderr
+    if not CATEGORY_COUNTS:
+        print("No category counts available", file=output)
+    else:
+        print("Category counts:", file=output)
+        for k in sorted(CATEGORY_COUNTS):
+            print(f"  {k}: {CATEGORY_COUNTS[k]}", file=output)
+    return dict(CATEGORY_COUNTS)
+
+def compute_category_counts(files: List[str]):
+    """Compute category counts from the provided vCard files and store them.
+    Returns a dict copy of the computed counts.
+    """
+    counts = {}
+    for p in files:
+        p = Path(p)
+        if not p.exists():
+            print(f"Warning: {p} not found, skipping", file=sys.stderr)
+            continue
+        text = p.read_text(encoding='utf-8', errors='replace')
+        for vcard in iter_vcards(text):
+            cats = [c.lower() for c in get_categories(vcard)]
+            for c in cats:
+                counts[c] = counts.get(c, 0) + 1
+    global CATEGORY_COUNTS
+    CATEGORY_COUNTS = counts
+    return dict(counts)
+
 def unfold(text):
     """Unfold folded vCard lines.
 
@@ -257,6 +296,26 @@ def main():
             print("Category counts:", file=sys.stderr)
             for k in sorted(CATEGORY_COUNTS):
                 print(f"  {k}: {CATEGORY_COUNTS[k]}", file=sys.stderr)
+
+    elif func == "categorycounts":
+        # If files are provided as arguments, compute counts from them.
+        # args here are remaining argv after removing --out.
+        if args:
+            compute_category_counts(args)
+
+        # If still no counts, provide a helpful hint on how to use the command.
+        if not CATEGORY_COUNTS:
+            print("No category counts available. Provide one or more vCard files to compute counts, e.g.:",
+                  file=sys.stderr)
+            print("  python vcard.py categorycounts cards.vcf [more.vcf ...] [--out out.txt]", file=sys.stderr)
+
+        # Output the counts either to the requested file or to stdout.
+        if out_path:
+            with open(out_path, "w", encoding="utf-8") as fh:
+                categorycounts(output=fh)
+        else:
+            categorycounts(output=sys.stdout)
+
     else:
         print_usage()
         sys.exit(1)
