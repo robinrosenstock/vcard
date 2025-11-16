@@ -240,13 +240,8 @@ def print_usage():
     print("Usage:")
     print("  python vcard.py categorydiff CategoryA CategoryB file1.vcf [file2.vcf ...] [--out out.vcf]")
 
-def main(argv=None):
-    """Main entrypoint using argparse with two subcommands: categorydiff and categorycounts."""
-    if argv is None:
-        argv = sys.argv[1:]
-
-    logging.basicConfig(format="%(levelname)s: %(message)s")
-
+def build_parser():
+    """Construct and return the top-level argparse.ArgumentParser for this CLI."""
     parser = argparse.ArgumentParser(prog="vcard.py", description="vCard utilities")
     parser.add_argument("--version", action="version", version=__version__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -263,6 +258,16 @@ def main(argv=None):
     p_counts.add_argument("files", nargs="*", help="Optional .vcf files to compute counts from")
     p_counts.add_argument("--out", "-o", dest="out", help="Write counts to file (default stdout)")
 
+    return parser
+
+def main(argv=None):
+    """Main entrypoint: parse args (via build_parser) and dispatch commands."""
+    if argv is None:
+        argv = sys.argv[1:]
+
+    logging.basicConfig(format="%(levelname)s: %(message)s")
+
+    parser = build_parser()
     args = parser.parse_args(argv)
 
     if args.command == "categorydiff":
