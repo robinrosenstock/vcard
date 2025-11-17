@@ -45,15 +45,22 @@ def main(argv=None):
             matches = filtered
 
         if args.name or args.number:
-            lines = []
+            rows = []
             for card in matches:
-                cols = []
-                if args.name:
-                    cols.append(get_name(card))
-                if args.number:
-                    nums = get_numbers(card)
-                    cols.append(";".join(nums) if nums else "")
-                lines.append("\t".join(cols))
+                name_val = get_name(card) if args.name else ""
+                number_val = ";".join(get_numbers(card)) if args.number else ""
+                rows.append((name_val, number_val))
+            if args.name and args.number:
+                name_width = max((len(row[0]) for row in rows), default=0)
+                lines = [
+                    f"{row[0].ljust(name_width)}  {row[1]}"
+                    for row in rows
+                ]
+            else:
+                lines = [
+                    row[0] if args.name else row[1]
+                    for row in rows
+                ]
             output = ("\n".join(lines) + ("\n" if lines else ""))
         else:
             output = ("\n".join(matches) + ("\n" if matches else ""))
