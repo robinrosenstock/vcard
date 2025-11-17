@@ -36,19 +36,13 @@ def build_parser():
     p_diff.add_argument("files", nargs="+", help="One or more .vcf files")
     p_diff.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
 
-    p_contacts = subparsers.add_parser("categorycontacts", help="Output vCards that have the specified category(ies)")
+    p_contacts = subparsers.add_parser("categorycontacts", help="Output vCards that match the specified category(ies)")
     p_contacts.add_argument("category", nargs="+", help="One or more category names (comma/semicolon allowed in a single argument)")
     p_contacts.add_argument("files", nargs="+", help="One or more .vcf files")
+    p_contacts.add_argument("--all", action="store_true", dest="require_all", help="Require all categories (default: any category matches)")
     p_contacts.add_argument("--name", action="store_true", dest="name", help="Output only the contact name(s) instead of full vCard")
     p_contacts.add_argument("--number", action="store_true", dest="number", help="Output only telephone number(s) instead of full vCard")
     p_contacts.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
-
-    p_contacts_all = subparsers.add_parser("categorycontacts_all", help="Output vCards that have all specified categories")
-    p_contacts_all.add_argument("category", nargs="+", help="One or more category names (comma/semicolon allowed in a single argument)")
-    p_contacts_all.add_argument("files", nargs="+", help="One or more .vcf files")
-    p_contacts_all.add_argument("--name", action="store_true", dest="name", help="Output only the contact name(s) instead of full vCard")
-    p_contacts_all.add_argument("--number", action="store_true", dest="number", help="Output only telephone number(s) instead of full vCard")
-    p_contacts_all.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
 
     p_counts = subparsers.add_parser("count_categories", help="Compute/print category occurrence counts")
     p_counts.add_argument("files", nargs="*", help="Optional .vcf files to compute counts from")

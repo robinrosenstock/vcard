@@ -143,8 +143,15 @@ def get_numbers(card: str) -> List[str]:
                 nums.append(val)
     return nums
 
-def categorycontacts(categories, files: List[str]) -> List[str]:
-    """Return vCard blocks that have any of the specified categories (case-insensitive)."""
+def categorycontacts(categories, files: List[str], require_all: bool = False) -> List[str]:
+    """Return vCard blocks matching the specified categories.
+
+    Args:
+        categories: string/list of category names (comma/semicolon allowed in string form).
+        files: list of .vcf paths.
+        require_all: if True, only include cards that contain every requested category.
+                     If False (default), include cards containing any requested category.
+    """
     if isinstance(categories, str):
         cats = [c.strip().lower() for c in re.split(r'[;,]', categories) if c.strip()]
     else:
@@ -156,24 +163,7 @@ def categorycontacts(categories, files: List[str]) -> List[str]:
     results = []
     for card in read_vcards(files):
         card_cats = {c.lower() for c in get_categories(card)}
-        if any(cat in card_cats for cat in cats):
-            results.append(card)
-    return results
-
-def categorycontacts_all(categories, files: List[str]) -> List[str]:
-    """Return vCard blocks that have all of the specified categories (case-insensitive)."""
-    if isinstance(categories, str):
-        cats = [c.strip().lower() for c in re.split(r'[;,]', categories) if c.strip()]
-    else:
-        cats = [str(c).strip().lower() for c in categories if str(c).strip()]
-
-    if not cats:
-        return []
-
-    results = []
-    for card in read_vcards(files):
-        card_cats = {c.lower() for c in get_categories(card)}
-        if all(cat in card_cats for cat in cats):
+        if (all(cat in card_cats for cat in cats) if require_all else any(cat in card_cats for cat in cats)):
             results.append(card)
     return results
 
@@ -216,6 +206,5 @@ __all__ = [
     "get_name",
     "get_numbers",
     "categorycontacts",
-    "categorycontacts_all",
     "categorydiff",
 ]
