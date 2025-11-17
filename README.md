@@ -35,3 +35,17 @@ Note: If no files are provided, the command will print a brief usage hint descri
 ```bash
 pytest -q
 ```
+
+# run as cli command vcard
+
+Run the CLI command `vcard` from within a Python virtual environment.
+
+1. Install package (editable during development):
+   pip install -e .
+2. Run:
+   vcard --help
+
+Notes
+- `pip install -e .` registers the console script defined in pyproject.toml (`vcard = "vcard.vcard:main"`).
+- To remove the script, run: `pip uninstall vcard` while the same venv is active.
+- If you change entry points or setup, reinstall (`pip install -e .`) to update the script.
