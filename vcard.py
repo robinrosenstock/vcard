@@ -8,7 +8,6 @@ from argparsing import build_parser
 from utils import (
     count_categories,
     categorycontacts,
-    categorydiff,
     get_name,
     get_numbers,
 )
@@ -23,31 +22,8 @@ def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if args.command == "categorydiff":
-        category_a = args.category_a
-        category_b = args.category_b
-        input_files = args.files
-        matches = categorydiff(category_a, category_b, input_files)
-        if args.name or args.number:
-            lines = []
-            for card in matches:
-                cols = []
-                if args.name:
-                    cols.append(get_name(card))
-                if args.number:
-                    nums = get_numbers(card)
-                    cols.append(";".join(nums) if nums else "")
-                lines.append("\t".join(cols))
-            output = ("\n".join(lines) + ("\n" if lines else ""))
-        else:
-            output = ("\n".join(matches) + ("\n" if matches else ""))
-        if args.out:
-            Path(args.out).write_text(output, encoding="utf-8")
-        else:
-            sys.stdout.write(output)
-
-    elif args.command == "categorycontacts":
-        matches = categorycontacts(args.category, args.files, require_all=args.require_all)
+    if args.command == "categorycontacts":
+        matches = categorycontacts(args.category, args.files, require_all=args.require_all, exclude=args.exclude)
         if args.name or args.number:
             lines = []
             for card in matches:

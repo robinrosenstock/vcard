@@ -143,56 +143,37 @@ def get_numbers(card: str) -> List[str]:
                 nums.append(val)
     return nums
 
-def categorycontacts(categories, files: List[str], require_all: bool = False) -> List[str]:
-    """Return vCard blocks matching the specified categories.
-
-    Args:
-        categories: string/list of category names (comma/semicolon allowed in string form).
-        files: list of .vcf paths.
-        require_all: if True, only include cards that contain every requested category.
-                     If False (default), include cards containing any requested category.
-    """
-    if isinstance(categories, str):
-        cats = [c.strip().lower() for c in re.split(r'[;,]', categories) if c.strip()]
+def _normalize_categories(value) -> List[str]:
+    if not value:
+        return []
+    if isinstance(value, str):
+        items = [value]
     else:
-        cats = [str(c).strip().lower() for c in categories if str(c).strip()]
+        items = value
+    normalized = []
+    for item in items:
+        for part in re.split(r'[;,]', str(item)):
+            part = part.strip().lower()
+            if part:
+                normalized.append(part)
+    return normalized
 
-    if not cats:
+def categorycontacts(categories, files: List[str], require_all: bool = False, exclude=None) -> List[str]:
+    """Return vCard blocks matching include categories while excluding others."""
+    include = _normalize_categories(categories)
+    exclude = set(_normalize_categories(exclude))
+    if not include:
         return []
 
     results = []
     for card in read_vcards(files):
         card_cats = {c.lower() for c in get_categories(card)}
-        if (all(cat in card_cats for cat in cats) if require_all else any(cat in card_cats for cat in cats)):
+        if exclude and any(cat in card_cats for cat in exclude):
+            continue
+        match = all(cat in card_cats for cat in include) if require_all else any(cat in card_cats for cat in include)
+        if match:
             results.append(card)
     return results
-
-def categorydiff(cat_a: str, cat_b: str, files: List[str]) -> List[str]:
-    """Return vCard blocks that have cat_a but not cat_b and record category counts."""
-    cards = read_vcards(files)
-    out = []
-    counts_total = {}
-    cat_a = cat_a.lower()
-    count_of_cat_a = 0
-    cat_b = cat_b.lower()
-    count_of_cat_b = 0
-    for card in cards:
-        name = get_name(card)
-        cats = [c.lower() for c in get_categories(card)]
-        for c in cats:
-            counts_total[c] = counts_total.get(c, 0) + 1
-            if cat_a == c:
-                print(name)
-                count_of_cat_a += 1
-            if cat_b == c:
-                count_of_cat_b += 1
-        if cat_a in cats and cat_b not in cats:
-            out.append(card)
-    global _categorycounts
-    print(count_of_cat_a)
-    print(count_of_cat_b)
-    _categorycounts = counts_total
-    return out
 
 
 __all__ = [
@@ -206,5 +187,4 @@ __all__ = [
     "get_name",
     "get_numbers",
     "categorycontacts",
-    "categorydiff",
 ]
