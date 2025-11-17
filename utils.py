@@ -158,11 +158,14 @@ def _normalize_categories(value) -> List[str]:
                 normalized.append(part)
     return normalized
 
-def categorycontacts(categories, files: List[str], require_all: bool = False, exclude=None) -> List[str]:
-    """Return vCard blocks matching include categories while excluding others."""
+def categorycontacts(categories, files: List[str], must_have=None, exclude=None) -> List[str]:
+    """Return vCard blocks matching include categories while enforcing required/excluded ones."""
     include = _normalize_categories(categories)
+    required = set(_normalize_categories(must_have))
     exclude = set(_normalize_categories(exclude))
-    if not include:
+
+    # If nothing to match or require, nothing useful to return
+    if not include and not required:
         return []
 
     results = []
@@ -170,8 +173,9 @@ def categorycontacts(categories, files: List[str], require_all: bool = False, ex
         card_cats = {c.lower() for c in get_categories(card)}
         if exclude and any(cat in card_cats for cat in exclude):
             continue
-        match = all(cat in card_cats for cat in include) if require_all else any(cat in card_cats for cat in include)
-        if match:
+        include_ok = True if not include else any(cat in card_cats for cat in include)
+        required_ok = all(cat in card_cats for cat in required)
+        if include_ok and required_ok:
             results.append(card)
     return results
 

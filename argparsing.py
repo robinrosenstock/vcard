@@ -33,7 +33,7 @@ def build_parser():
     p_contacts = subparsers.add_parser("get-contacts", help="Output vCards that match the specified category(ies)")
     p_contacts.add_argument("category", nargs="+", help="One or more category names (comma/semicolon allowed in a single argument)")
     p_contacts.add_argument("files", nargs="+", help="One or more .vcf files")
-    p_contacts.add_argument("--all", action="store_true", dest="require_all", help="Require all categories (default: any category matches)")
+    p_contacts.add_argument("--has", dest="must_have", action="append", default=[], help="Require contacts to have these category names (comma/semicolon allowed per value)")
     p_contacts.add_argument("--not", dest="exclude", action="append", default=[], help="Exclude contacts containing these category names (comma/semicolon allowed per value)")
     p_contacts.add_argument("--name", action="store_true", dest="name", help="Output only the contact name(s) instead of full vCard")
     p_contacts.add_argument("--number", action="store_true", dest="number", help="Output only telephone number(s) instead of full vCard")

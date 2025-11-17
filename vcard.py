@@ -23,7 +23,12 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if args.command == "get-contacts":
-        matches = categorycontacts(args.category, args.files, require_all=args.require_all, exclude=args.exclude)
+        matches = categorycontacts(
+            args.category,
+            args.files,
+            must_have=args.must_have,
+            exclude=args.exclude,
+        )
         if args.name or args.number:
             lines = []
             for card in matches:
