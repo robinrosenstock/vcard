@@ -158,15 +158,17 @@ def _normalize_categories(value) -> List[str]:
                 normalized.append(part)
     return normalized
 
-def categorycontacts(categories, files: List[str], must_have=None, exclude=None) -> List[str]:
+def categorycontacts(categories=None, files: List[str] = None, must_have=None, exclude=None) -> List[str]:
     """Return vCard blocks matching include categories while enforcing required/excluded ones."""
     include = _normalize_categories(categories)
     required = set(_normalize_categories(must_have))
     exclude = set(_normalize_categories(exclude))
 
-    # If nothing to match or require, nothing useful to return
     if not include and not required:
         return []
+
+    if files is None:
+        files = []
 
     results = []
     for card in read_vcards(files):

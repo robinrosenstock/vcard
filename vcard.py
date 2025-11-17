@@ -24,8 +24,8 @@ def main(argv=None):
 
     if args.command == "get-contacts":
         matches = categorycontacts(
-            args.category,
-            args.files,
+            categories=None,
+            files=args.files,
             must_have=args.must_have,
             exclude=args.exclude,
         )
