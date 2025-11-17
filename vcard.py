@@ -6,16 +6,13 @@ from pathlib import Path
 # direct imports of top-level modules (installed as py_modules or present locally)
 from argparsing import build_parser
 from utils import (
-    categorycounts,
+    count_categories,
     categorycontacts,
     categorycontacts_all,
     categorydiff,
     get_name,
     get_numbers,
 )
-
-__version__ = "0.1.0"
-
 
 def main(argv=None):
     """Main entrypoint: parse args (via build_parser) and dispatch commands."""
@@ -80,14 +77,14 @@ def main(argv=None):
         else:
             sys.stdout.write(output)
 
-    elif args.command == "categorycounts":
-        counts = categorycounts(args.files if args.files else None)
+    elif args.command == "count_categories":
+        counts = count_categories(args.files if args.files else None)
         if not counts:
             logging.info("No category counts available. Provide vCard files to compute counts.")
             parser.exit(0)
         if args.out:
             with open(args.out, "w", encoding="utf-8") as fh:
-                categorycounts(output=fh)
+                count_categories(output=fh)
 
 
 if __name__ == "__main__":

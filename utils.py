@@ -13,7 +13,7 @@ All vCard utility function implementations (extracted from vcard.py).
 __version__ = "0.1.0"
 _categorycounts = {}  # module-level store for last computed category counts
 
-def categorycounts(files: List[str] = None, output=None):
+def count_categories(files: List[str] = None, output=None):
     """Compute (if files provided) and/or print stored category counts; return dict copy."""
     global _categorycounts
 
@@ -206,7 +206,7 @@ def categorydiff(cat_a: str, cat_b: str, files: List[str]) -> List[str]:
 
 
 __all__ = [
-    "categorycounts",
+    "count_categories",
     "unfold",
     "iter_vcards",
     "categories_from_vcard",

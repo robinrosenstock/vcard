@@ -50,7 +50,7 @@ def build_parser():
     p_contacts_all.add_argument("--number", action="store_true", dest="number", help="Output only telephone number(s) instead of full vCard")
     p_contacts_all.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
 
-    p_counts = subparsers.add_parser("categorycounts", help="Compute/print category occurrence counts")
+    p_counts = subparsers.add_parser("count_categories", help="Compute/print category occurrence counts")
     p_counts.add_argument("files", nargs="*", help="Optional .vcf files to compute counts from")
     p_counts.add_argument("--out", "-o", dest="out", help="Write counts to file (default stdout)")
 
