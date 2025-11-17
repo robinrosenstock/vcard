@@ -190,6 +190,34 @@ def categorycontacts(categories, files: List[str]) -> List[str]:
             results.append(card)
     return results
 
+def categorycontacts_all(categories, files: List[str]) -> List[str]:
+    """Return vCard blocks that have all of the specified categories (case-insensitive).
+
+    Args:
+        categories: either a single category string (possibly containing ',', ';' separators)
+                    or a list of category strings.
+        files: list of .vcf file paths to scan
+
+    Returns:
+        list of matching vCard blocks as strings
+    """
+    # normalize incoming categories to a list of lowercase names
+    if isinstance(categories, str):
+        cats = [c.strip().lower() for c in re.split(r'[;,]', categories) if c.strip()]
+    else:
+        cats = [str(c).strip().lower() for c in categories if str(c).strip()]
+
+    if not cats:
+        return []
+
+    results = []
+    for card in read_vcards(files):
+        card_cats = {c.lower() for c in get_categories(card)}
+        # include card only if it has all of the requested categories (logical AND)
+        if all(cat in card_cats for cat in cats):
+            results.append(card)
+    return results
+
 def get_name(card: str) -> str:
     """Extract a display name from a vCard block.
 
