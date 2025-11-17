@@ -5,9 +5,9 @@ import logging
 from typing import List
 from pathlib import Path
 
-"""utils.py
+"""function.py
 
-All vCard utility implementations
+All vCard utility function implementations (extracted from vcard.py).
 """
 
 __version__ = "0.1.0"

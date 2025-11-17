@@ -7,7 +7,7 @@ from pathlib import Path
 # fall back to local imports when running from repo root as script.
 try:
     from vcard.argparsing import build_parser
-    from vcard.functions import (
+    from vcard.utils import (
         categorycounts,
         categorycontacts,
         categorycontacts_all,
@@ -17,7 +17,7 @@ try:
     )
 except Exception:
     from argparsing import build_parser
-    from functions import (
+    from utils import (
         categorycounts,
         categorycontacts,
         categorycontacts_all,
