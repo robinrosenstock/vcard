@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import logging
-from function import *  # import all function implementations
+from functions import *  # import all function implementations
 
 """vcard.py
 
