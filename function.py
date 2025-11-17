@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import re
-import argparse
 import logging
 from typing import List
 from pathlib import Path
@@ -205,83 +204,8 @@ def categorydiff(cat_a: str, cat_b: str, files: List[str]) -> List[str]:
     _categorycounts = counts_total
     return out
 
-def parse_args(argv):
-    """Parse command line arguments (legacy helper)."""
-    if len(argv) < 3:
-        print("Usage: vcard.py CategoryA CategoryB file1.vcf [file2.vcf ...] [--out out.vcf]")
-        sys.exit(2)
 
-    args = list(argv)
-    out_path = None
-    if "--out" in args:
-        i = args.index("--out")
-        if i == len(args) - 1:
-            print("Provide output filename after --out")
-            sys.exit(2)
-        out_path = args[i+1]
-        args = args[:i] + args[i+2:]
-
-    cat_a = args[0].lower()
-    cat_b = args[1].lower()
-    files = args[2:]
-    return cat_a, cat_b, files, out_path
-
-def find_matching_vcards(cat_a, cat_b, files):
-    """Scan files and find vCards that have cat_a but lack cat_b."""
-    matches = []
-    total_vcards = 0
-    matched_count = 0
-
-    for p in files:
-        p = Path(p)
-        if not p.exists():
-            logging.warning("%s not found, skipping", p)
-            continue
-        text = read_file_as_utf8(p)
-        for vcard in iter_vcards(text):
-            total_vcards += 1
-            cats = categories_from_vcard(vcard)
-            if (cat_a in cats) and (cat_b not in cats):
-                matches.append(vcard)
-                matched_count += 1
-
-    return matches, total_vcards, matched_count
-
-def print_usage():
-    print("Usage:")
-    print("  python vcard.py categorydiff CategoryA CategoryB file1.vcf [file2.vcf ...] [--out out.vcf]")
-
-def build_parser():
-    """Construct and return the top-level argparse.ArgumentParser for this CLI."""
-    parser = argparse.ArgumentParser(prog="vcard.py", description="vCard utilities")
-    parser.add_argument("--version", action="version", version=__version__)
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    p_diff = subparsers.add_parser("categorydiff", help="Output vCards that have CategoryA but not CategoryB")
-    p_diff.add_argument("category_a")
-    p_diff.add_argument("category_b")
-    p_diff.add_argument("files", nargs="+", help="One or more .vcf files")
-    p_diff.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
-
-    p_contacts = subparsers.add_parser("categorycontacts", help="Output vCards that have the specified category(ies)")
-    p_contacts.add_argument("category", nargs="+", help="One or more category names (comma/semicolon allowed in a single argument)")
-    p_contacts.add_argument("files", nargs="+", help="One or more .vcf files")
-    p_contacts.add_argument("--name", action="store_true", dest="name", help="Output only the contact name(s) instead of full vCard")
-    p_contacts.add_argument("--number", action="store_true", dest="number", help="Output only telephone number(s) instead of full vCard")
-    p_contacts.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
-
-    p_contacts_all = subparsers.add_parser("categorycontacts_all", help="Output vCards that have all specified categories")
-    p_contacts_all.add_argument("category", nargs="+", help="One or more category names (comma/semicolon allowed in a single argument)")
-    p_contacts_all.add_argument("files", nargs="+", help="One or more .vcf files")
-    p_contacts_all.add_argument("--name", action="store_true", dest="name", help="Output only the contact name(s) instead of full vCard")
-    p_contacts_all.add_argument("--number", action="store_true", dest="number", help="Output only telephone number(s) instead of full vCard")
-    p_contacts_all.add_argument("--out", "-o", dest="out", help="Write matches to file (default stdout)")
-
-    p_counts = subparsers.add_parser("categorycounts", help="Compute/print category occurrence counts")
-    p_counts.add_argument("files", nargs="*", help="Optional .vcf files to compute counts from")
-    p_counts.add_argument("--out", "-o", dest="out", help="Write counts to file (default stdout)")
-
-    return parser
+from argparsing import build_parser, parse_args
 
 def main(argv=None):
     """Main entrypoint: parse args (via build_parser) and dispatch commands."""
@@ -369,9 +293,5 @@ __all__ = [
     "categorycontacts",
     "categorycontacts_all",
     "categorydiff",
-    "parse_args",
-    "find_matching_vcards",
-    "print_usage",
-    "build_parser",
     "main",
 ]
